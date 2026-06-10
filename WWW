@@ -2049,31 +2049,58 @@ local function applyConfigPreset(preset)
 	task.delay(0.2, syncSettings)
 end
 
-local repo = "https://raw.githubusercontent.com/deividcomsono/Obsidian/main/"
+local repo = "https://raw.githubusercontent.com/deividcomsono/Obsidian/refs/heads/main/"
 
 local function cleanLoad(url)
-	local content = ""
-	local att = 0
-	repeat
-		att = att + 1
-		local ok = pcall(function() content = game:HttpGet(url, true) end)
-		if not ok or not content or #content < 100 then
-			content = ""
-			task.wait(1)
+	local content = nil
+	for i = 1, 5 do
+		pcall(function()
+			content = game:HttpGet(url, true)
+		end)
+		if content and type(content) == "string" and #content > 100 then
+			break
 		end
-	until (content and #content > 100) or att >= 5
-	if not content or #content < 100 then return nil end
-	content = content:gsub("^\239\187\191",""):gsub("^%s+",""):gsub("%s+$","")
-	local ok, fn = pcall(loadstring, content)
-	if not ok or type(fn) ~= "function" then return nil end
+		content = nil
+		task.wait(1.5)
+	end
+	if not content or #content < 100 then
+		warn("KiraHub: Failed to load " .. url)
+		return nil
+	end
+	content = content:gsub("^\239\187\191", ""):gsub("^%s+", ""):gsub("%s+$", "")
+	local ok1, fn = pcall(loadstring, content)
+	if not ok1 or type(fn) ~= "function" then
+		warn("KiraHub: loadstring failed for " .. url)
+		return nil
+	end
 	local ok2, result = pcall(fn)
-	if not ok2 then return nil end
+	if not ok2 then
+		warn("KiraHub: execution failed for " .. url)
+		return nil
+	end
 	return result
+end
+
+local function makeFallback()
+	local t = {}
+	setmetatable(t, {
+		__index = function(_, k)
+			return function(...) end
+		end
+	})
+	return t
 end
 
 Lib = cleanLoad(repo .. "Library.lua")
 if not Lib then
-	StarterGui:SetCore("SendNotification", {Title="Kira Hub", Text="Library failed. Re-execute.", Duration=5})
+	Lib = cleanLoad("https://raw.githubusercontent.com/deividcomsono/Obsidian/main/Library.lua")
+end
+if not Lib then
+	StarterGui:SetCore("SendNotification", {
+		Title = "Kira Hub",
+		Text = "Library failed to load. Re-execute in 10 seconds.",
+		Duration = 8
+	})
 	getgenv().KiraHubAOTR = false
 	getgenv().KiraHubLoading = false
 	return
@@ -2081,15 +2108,20 @@ end
 
 ThemeManager = cleanLoad(repo .. "addons/ThemeManager.lua")
 if not ThemeManager then
-	ThemeManager = {}
-	setmetatable(ThemeManager, {__index = function() return function() end end})
+	ThemeManager = cleanLoad("https://raw.githubusercontent.com/deividcomsono/Obsidian/main/addons/ThemeManager.lua")
+end
+if not ThemeManager then
+	ThemeManager = makeFallback()
 end
 
 SaveManager = cleanLoad(repo .. "addons/SaveManager.lua")
 if not SaveManager then
-	SaveManager = {}
-	setmetatable(SaveManager, {__index = function() return function() end end})
+	SaveManager = cleanLoad("https://raw.githubusercontent.com/deividcomsono/Obsidian/main/addons/SaveManager.lua")
 end
+if not SaveManager then
+	SaveManager = makeFallback()
+end
+
 
 local Options = Lib.Options
 local Toggles = Lib.Toggles
