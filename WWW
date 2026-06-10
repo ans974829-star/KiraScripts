@@ -2049,56 +2049,11 @@ local function applyConfigPreset(preset)
 	task.delay(0.2, syncSettings)
 end
 
-local repo = "https://raw.githubusercontent.com/deividcomsono/Obsidian/refs/heads/main/"
-
-local function cleanLoad(url)
-	local content = nil
-	for i = 1, 5 do
-		pcall(function()
-			content = game:HttpGet(url, true)
-		end)
-		if content and type(content) == "string" and #content > 100 then
-			break
-		end
-		content = nil
-		task.wait(1.5)
-	end
-	if not content or #content < 100 then
-		warn("KiraHub: Failed to load " .. url)
-		return nil
-	end
-	content = content:gsub("^\239\187\191", ""):gsub("^%s+", ""):gsub("%s+$", "")
-	local ok1, fn = pcall(loadstring, content)
-	if not ok1 or type(fn) ~= "function" then
-		warn("KiraHub: loadstring failed for " .. url)
-		return nil
-	end
-	local ok2, result = pcall(fn)
-	if not ok2 then
-		warn("KiraHub: execution failed for " .. url)
-		return nil
-	end
-	return result
-end
-
-local function makeFallback()
-	local t = {}
-	setmetatable(t, {
-		__index = function(_, k)
-			return function(...) end
-		end
-	})
-	return t
-end
-
-Lib = cleanLoad(repo .. "Library.lua")
-if not Lib then
-	Lib = cleanLoad("https://raw.githubusercontent.com/deividcomsono/Obsidian/main/Library.lua")
-end
+local Lib = loadstring(game:HttpGet("https://raw.githubusercontent.com/deividcomsono/Obsidian/main/Library.lua"))()
 if not Lib then
 	StarterGui:SetCore("SendNotification", {
 		Title = "Kira Hub",
-		Text = "Library failed to load. Re-execute in 10 seconds.",
+		Text = "Library failed. Re-execute.",
 		Duration = 8
 	})
 	getgenv().KiraHubAOTR = false
@@ -2106,12 +2061,16 @@ if not Lib then
 	return
 end
 
-ThemeManager = cleanLoad(repo .. "addons/ThemeManager.lua")
+local ThemeManager = loadstring(game:HttpGet("https://raw.githubusercontent.com/deividcomsono/Obsidian/main/addons/ThemeManager.lua"))()
 if not ThemeManager then
-	ThemeManager = cleanLoad("https://raw.githubusercontent.com/deividcomsono/Obsidian/main/addons/ThemeManager.lua")
+	ThemeManager = {}
+	setmetatable(ThemeManager, {__index = function() return function() end end})
 end
-if not ThemeManager then
-	ThemeManager = makeFallback()
+
+local SaveManager = loadstring(game:HttpGet("https://raw.githubusercontent.com/deividcomsono/Obsidian/main/addons/SaveManager.lua"))()
+if not SaveManager then
+	SaveManager = {}
+	setmetatable(SaveManager, {__index = function() return function() end end})
 end
 
 SaveManager = cleanLoad(repo .. "addons/SaveManager.lua")
@@ -2123,8 +2082,8 @@ if not SaveManager then
 end
 
 
-local Options = Lib.Options
-local Toggles = Lib.Toggles
+local Options = Lib.Options or {}
+local Toggles = Lib.Toggles or {}
 
 local Window = Lib:CreateWindow({
 	Title = "Kira Hub | AoT:R",
@@ -2133,7 +2092,6 @@ local Window = Lib:CreateWindow({
 	Resizable = true,
 	Center = true,
 	AutoShow = true,
-	Icon = "rbxassetid://115346308182122",
 })
 
 local Tabs = {
@@ -3187,9 +3145,9 @@ end})
 
 pcall(function() ThemeManager:SetLibrary(Lib) end)
 pcall(function() SaveManager:SetLibrary(Lib) end)
-pcall(function() ThemeManager:SetFolder("KiraHub/aotr") end)
-pcall(function() SaveManager:SetFolder("KiraHub/aotr/Configs") end)
-pcall(function() ThemeManager:SetDefaultTheme({AccentColor=Color3.fromRGB(200,200,200), FontFace="Jura"}) end)
+pcall(function() ThemeManager:SetFolder("KiraHub_AOTR") end)
+pcall(function() SaveManager:SetFolder("KiraHub_AOTR/Configs") end)
+pcall(function() ThemeManager:SetDefaultTheme({AccentColor = Color3.fromRGB(200, 200, 200)}) end)
 pcall(function() SaveManager:BuildConfigSection(Tabs.Settings) end)
 pcall(function() ThemeManager:ApplyToTab(Tabs.Settings) end)
 pcall(function() SaveManager:LoadAutoloadConfig() end)
