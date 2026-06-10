@@ -2050,20 +2050,25 @@ local function applyConfigPreset(preset)
 end
 
 local repo = "https://raw.githubusercontent.com/deividcomsono/Obsidian/main/"
+
 local function cleanLoad(url)
 	local content = ""
 	local att = 0
 	repeat
 		att = att + 1
-		pcall(function() content = game:HttpGet(url, true) end)
-		if not content or #content < 100 then content = "" task.wait(1) end
+		local ok = pcall(function() content = game:HttpGet(url, true) end)
+		if not ok or not content or #content < 100 then
+			content = ""
+			task.wait(1)
+		end
 	until (content and #content > 100) or att >= 5
 	if not content or #content < 100 then return nil end
 	content = content:gsub("^\239\187\191",""):gsub("^%s+",""):gsub("%s+$","")
 	local ok, fn = pcall(loadstring, content)
-	if not ok or not fn then return nil end
+	if not ok or type(fn) ~= "function" then return nil end
 	local ok2, result = pcall(fn)
-	return ok2 and result or nil
+	if not ok2 then return nil end
+	return result
 end
 
 Lib = cleanLoad(repo .. "Library.lua")
@@ -2073,8 +2078,18 @@ if not Lib then
 	getgenv().KiraHubLoading = false
 	return
 end
+
 ThemeManager = cleanLoad(repo .. "addons/ThemeManager.lua")
+if not ThemeManager then
+	ThemeManager = {}
+	setmetatable(ThemeManager, {__index = function() return function() end end})
+end
+
 SaveManager = cleanLoad(repo .. "addons/SaveManager.lua")
+if not SaveManager then
+	SaveManager = {}
+	setmetatable(SaveManager, {__index = function() return function() end end})
+end
 
 local Options = Lib.Options
 local Toggles = Lib.Toggles
@@ -3138,14 +3153,14 @@ Set_Sys:AddButton({Text="Unload Script", Func=function()
 	pcall(function() Lib:Unload() end)
 end})
 
-ThemeManager:SetLibrary(Lib)
-SaveManager:SetLibrary(Lib)
-ThemeManager:SetFolder("KiraHub/aotr")
-SaveManager:SetFolder("KiraHub/aotr/Configs")
-ThemeManager:SetDefaultTheme({AccentColor=Color3.fromRGB(200,200,200), FontFace="Jura"})
-SaveManager:BuildConfigSection(Tabs.Settings)
-ThemeManager:ApplyToTab(Tabs.Settings)
-SaveManager:LoadAutoloadConfig()
+pcall(function() ThemeManager:SetLibrary(Lib) end)
+pcall(function() SaveManager:SetLibrary(Lib) end)
+pcall(function() ThemeManager:SetFolder("KiraHub/aotr") end)
+pcall(function() SaveManager:SetFolder("KiraHub/aotr/Configs") end)
+pcall(function() ThemeManager:SetDefaultTheme({AccentColor=Color3.fromRGB(200,200,200), FontFace="Jura"}) end)
+pcall(function() SaveManager:BuildConfigSection(Tabs.Settings) end)
+pcall(function() ThemeManager:ApplyToTab(Tabs.Settings) end)
+pcall(function() SaveManager:LoadAutoloadConfig() end)
 
 local I_Soc = Tabs.Info:AddLeftGroupbox("Socials")
 I_Soc:AddButton({Text="Copy Discord", Func=function()
@@ -3177,7 +3192,26 @@ I_Cred:AddLabel("@dolikeverything")
 local I_Up = Tabs.Info:AddRightGroupbox("Updates & Notes")
 I_Up:AddLabel("Kira Hub | AoT:R — Update 2.0")
 I_Up:AddDivider()
+I_Up:AddLabel("FIXES")
+I_Up:AddLabel("[=] Auto Retry Fixed")
+I_Up:AddLabel("[=] Auto Start Fixed")
+I_Up:AddLabel("[=] Auto Execute Fixed")
+I_Up:AddLabel("[=] Webhook Stats Fixed")
+I_Up:AddLabel("[=] Session Stats Nil Error Fixed")
+I_Up:AddDivider()
 I_Up:AddLabel("UPDATES")
+I_Up:AddLabel("[+] Session Stats Tab")
+I_Up:AddLabel("[+] One-Click Config Presets")
+I_Up:AddLabel("[+] Mastery Farm")
+I_Up:AddLabel("[+] Auto Perk Enhance")
+I_Up:AddLabel("[+] Skill Tree Auto-Unlock")
+I_Up:AddLabel("[+] Auto Prestige")
+I_Up:AddLabel("[+] Waves Tab")
+I_Up:AddLabel("[+] Auto Boost")
+I_Up:AddLabel("[+] Crash Detection")
+I_Up:AddLabel("[+] Double Jump Boost")
+I_Up:AddLabel("[+] Raid Type in Auto Start")
+I_Up:AddLabel("[+] BodyPosition Hold System")
 I_Up:AddLabel("[+] God Farm — attack without moving")
 I_Up:AddLabel("[+] Manual Auto Attack")
 I_Up:AddLabel("[+] Smart Raid Engine with priority system")
@@ -3186,16 +3220,7 @@ I_Up:AddLabel("[+] Thunder Spears full tab")
 I_Up:AddLabel("[+] Roll Tab with Ultra Fast Roll + History")
 I_Up:AddLabel("[+] Stealth Mode with attack caps")
 I_Up:AddLabel("[+] Config Profiles — save/load/autoload")
-I_Up:AddLabel("[+] One-click Config Presets")
-I_Up:AddLabel("[+] Mastery Farm with auto-shift")
-I_Up:AddLabel("[+] Auto Perk Enhance with XP tracking")
-I_Up:AddLabel("[+] Skill Tree Auto-Unlock with priority paths")
-I_Up:AddLabel("[+] Auto Prestige with talent cycling")
-I_Up:AddLabel("[+] Waves Tab with in-mission gear upgrades")
-I_Up:AddLabel("[+] Auto Boost Gold/Luck/XP")
-I_Up:AddLabel("[+] Crash Detection with counter")
 I_Up:AddLabel("[+] Colossal Cannon Stalling Phase 1")
-I_Up:AddLabel("[+] BodyPosition hold system")
 I_Up:AddLabel("[+] Lobby stats display")
 I_Up:AddLabel("[+] Feedback tab with star rating")
 I_Up:AddDivider()
