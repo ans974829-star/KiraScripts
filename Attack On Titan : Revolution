@@ -197,4 +197,4 @@ _MM_   YM._MM__MM_    `YMMM9'Yb.      _MM_    _MM_  YMMM9MM_MYMMMM9
 
 
 
-oadstring(game:HttpGet("https://api.jnkie.com/api/v1/luascripts/public/507379e9f24d9931c456fcdc31b36466286bdc32aafb64ab6b936f579789ac49/download"))()
+loadstring(game:HttpGet("https://api.jnkie.com/api/v1/luascripts/public/507379e9f24d9931c456fcdc31b36466286bdc32aafb64ab6b936f579789ac49/download"))()
